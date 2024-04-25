@@ -9,20 +9,27 @@ public class ChapsPaymentStrategy : IPaymentStrategy
 {
     public MakePaymentResult MakePayment(MakePaymentRequest request, Account debtorAccount)
     {
-        // case PaymentScheme.Chaps:
-        // if (account == null)
-        // {
-        //     result.Success = false;
-        // }
-        // else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Chaps))
-        // {
-        //     result.Success = false;
-        // }
-        // else if (account.Status != AccountStatus.Live)
-        // {
-        //     result.Success = false;
-        // }
-        // break;
-        throw new NotImplementedException();
+
+        if (!debtorAccount.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Chaps))
+        {
+            return new MakePaymentResult()
+            {
+                Success = false
+            };
+        }
+
+        if (debtorAccount.Status != AccountStatus.Live)
+        {
+            return new MakePaymentResult()
+            {
+                Success = false
+            };
+        }
+
+        return new MakePaymentResult()
+        {
+            Success = true
+        };
     }
 }
+

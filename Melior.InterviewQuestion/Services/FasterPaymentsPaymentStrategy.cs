@@ -9,20 +9,25 @@ public class FasterPaymentsPaymentStrategy : IPaymentStrategy
 {
     public MakePaymentResult MakePayment(MakePaymentRequest request, Account debtorAccount)
     {
-        // case PaymentScheme.FasterPayments:
-        // if (account == null)
-        // {
-        //     result.Success = false;
-        // }
-        // else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.FasterPayments))
-        // {
-        //     result.Success = false;
-        // }
-        // else if (account.Balance < request.Amount)
-        // {
-        //     result.Success = false;
-        // }
-        // break;
-        throw new NotImplementedException();
+        if (!debtorAccount.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.FasterPayments))
+        {
+            return new MakePaymentResult()
+            {
+                Success = false
+            };
+        }
+        
+        if (debtorAccount.Balance < request.Amount)
+        {
+            return new MakePaymentResult()
+            {
+                Success = false
+            };
+        }
+        
+        return new MakePaymentResult()
+        {
+            Success = true
+        };
     }
 }

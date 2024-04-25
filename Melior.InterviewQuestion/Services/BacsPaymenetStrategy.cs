@@ -6,20 +6,21 @@ using Melior.InterviewQuestion.Types;
 namespace Melior.InterviewQuestion.Services;
 
 
-public class BacsPaymenetStrategy : IPaymentStrategy
+public class BacsPaymentStrategy : IPaymentStrategy
 {
     public MakePaymentResult MakePayment(MakePaymentRequest request, Account debtorAccount)
     {
-        // case PaymentScheme.Bacs:
-        // if (account == null)
-        // {
-        //     result.Success = false;
-        // }
-        // else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Bacs))
-        // {
-        //     result.Success = false;
-        // }
-        // break;
-        throw new NotImplementedException();
+        if (!debtorAccount.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Bacs))
+        {
+            return new MakePaymentResult()
+            {
+                Success = false
+            };
+        }
+        
+        return new MakePaymentResult()
+        {
+            Success = true
+        };
     }
 }
