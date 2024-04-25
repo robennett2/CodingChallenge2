@@ -1,90 +1,40 @@
-﻿using Melior.InterviewQuestion.Data;
-using Melior.InterviewQuestion.Types;
-using System.Configuration;
+﻿using Melior.InterviewQuestion.Types;
 
 namespace Melior.InterviewQuestion.Services
 {
     public class PaymentService : IPaymentService
     {
+        private readonly IPaymentStrategyFactory _paymentStrategyFactory;
+        private readonly IAccountRepository _accountRepository;
+
+        public PaymentService(IPaymentStrategyFactory paymentStrategyFactory, IAccountRepository accountRepository)
+        {
+            _paymentStrategyFactory = paymentStrategyFactory;
+            _accountRepository = accountRepository;
+        }
+        
         public MakePaymentResult MakePayment(MakePaymentRequest request)
         {
-            var dataStoreType = ConfigurationManager.AppSettings["DataStoreType"];
+            var account = _accountRepository.GetAccount(request.DebtorAccountNumber);
 
-            Account account = null;
-
-            if (dataStoreType == "Backup")
+            if (account is null)
             {
-                var accountDataStore = new BackupAccountDataStore();
-                account = accountDataStore.GetAccount(request.DebtorAccountNumber);
-            }
-            else
-            {
-                var accountDataStore = new AccountDataStore();
-                account = accountDataStore.GetAccount(request.DebtorAccountNumber);
-            }
-
-            var result = new MakePaymentResult();
-
-            switch (request.PaymentScheme)
-            {
-                case PaymentScheme.Bacs:
-                    if (account == null)
-                    {
-                        result.Success = false;
-                    }
-                    else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Bacs))
-                    {
-                        result.Success = false;
-                    }
-                    break;
-
-                case PaymentScheme.FasterPayments:
-                    if (account == null)
-                    {
-                        result.Success = false;
-                    }
-                    else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.FasterPayments))
-                    {
-                        result.Success = false;
-                    }
-                    else if (account.Balance < request.Amount)
-                    {
-                        result.Success = false;
-                    }
-                    break;
-
-                case PaymentScheme.Chaps:
-                    if (account == null)
-                    {
-                        result.Success = false;
-                    }
-                    else if (!account.AllowedPaymentSchemes.HasFlag(AllowedPaymentSchemes.Chaps))
-                    {
-                        result.Success = false;
-                    }
-                    else if (account.Status != AccountStatus.Live)
-                    {
-                        result.Success = false;
-                    }
-                    break;
-            }
-
-            if (result.Success)
-            {
-                account.Balance -= request.Amount;
-
-                if (dataStoreType == "Backup")
+                return new MakePaymentResult
                 {
-                    var accountDataStore = new BackupAccountDataStore();
-                    accountDataStore.UpdateAccount(account);
-                }
-                else
-                {
-                    var accountDataStore = new AccountDataStore();
-                    accountDataStore.UpdateAccount(account);
-                }
+                    Success = false
+                };
+            }
+            
+            var paymentStrategy = _paymentStrategyFactory.GetPaymentStrategy(request.PaymentScheme);
+            var result = paymentStrategy.MakePayment(request, account);
+            
+            if (result.Success is false)
+            {
+                return result;
             }
 
+            account.Debit(request.Amount);
+            _accountRepository.UpdateAccount(account);
             return result;
         }
     }
