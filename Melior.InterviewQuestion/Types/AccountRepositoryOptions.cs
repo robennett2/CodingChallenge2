@@ -1,6 +1,6 @@
 ﻿namespace Melior.InterviewQuestion.Types;
 
-public class AccountServiceSettings
+public class AccountRepositoryOptions
 {
     public string DataStoreType { get; set; }
 }

@@ -1,48 +1,47 @@
-﻿using Melior.InterviewQuestion.Types;
+﻿using Melior.InterviewQuestion.Data;
+using Melior.InterviewQuestion.Types;
 using Microsoft.Extensions.Options;
 
 namespace Melior.InterviewQuestion.Services;
 
 public class AccountRepository : IAccountRepository
 {
-    private readonly AccountServiceSettings _settings;
+    private readonly IAccountDataStore _accountDataStore;
+    private readonly IBackupAccountDataStore _backupAccountDataStore;
+    private readonly IOptionsSnapshot<AccountRepositoryOptions> _accountServiceSettingsSnapshot;
     
-    public AccountRepository(IOptionsSnapshot<AccountServiceSettings> accountServiceSettingsSnapshot)
+    public AccountRepository(
+        IAccountDataStore accountDataStore,
+        IBackupAccountDataStore backupAccountDataStore,
+        IOptionsSnapshot<AccountRepositoryOptions> accountServiceSettingsSnapshot)
     {
-        _settings = accountServiceSettingsSnapshot.Value;
+        _accountDataStore = accountDataStore;
+        _backupAccountDataStore = backupAccountDataStore;
+        _accountServiceSettingsSnapshot = accountServiceSettingsSnapshot;
     }
     
     public Account? GetAccount(string accountNumber)
     {
-        // var dataStoreType = ConfigurationManager.AppSettings["DataStoreType"];
-        //
-        // Account account = null;
-        //
-        // if (dataStoreType == "Backup")
-        // {
-        //     var accountDataStore = new BackupAccountDataStore();
-        //     account = accountDataStore.GetAccount(request.DebtorAccountNumber);
-        // }
-        // else
-        // {
-        //     var accountDataStore = new AccountDataStore();
-        //     account = accountDataStore.GetAccount(request.DebtorAccountNumber);
-        // }
-        throw new System.NotImplementedException();
+        var dataStoreType = _accountServiceSettingsSnapshot.Value.DataStoreType;
+        if (dataStoreType == "Backup")
+        {
+            return _backupAccountDataStore.GetAccount(accountNumber);
+        }
+        else
+        {
+            return _accountDataStore.GetAccount(accountNumber);
+        }
     }
 
     public void UpdateAccount(Account account)
     {
-        // if (dataStoreType == "Backup")
-        // {
-        //     var accountDataStore = new BackupAccountDataStore();
-        //     accountDataStore.UpdateAccount(account);
-        // }
-        // else
-        // {
-        //     var accountDataStore = new AccountDataStore();
-        //     accountDataStore.UpdateAccount(account);
-        // }
-        throw new System.NotImplementedException();
+        if (_accountServiceSettingsSnapshot.Value.DataStoreType == "Backup")
+        {
+            _backupAccountDataStore.UpdateAccount(account);
+        }
+        else
+        {
+            _accountDataStore.UpdateAccount(account);
+        }
     }
 }
